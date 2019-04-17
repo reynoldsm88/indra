@@ -89,7 +89,13 @@ class GroundingMapper(object):
 
     @staticmethod
     def standardize_db_refs(db_refs):
-        """Return a dict with Harmonized entries from a given db_refs dict."""
+        """Return a dict with Harmonized entries from a given db_refs dict.
+
+        Importantly this function assumes that the incoming db_refs dict's
+        HGNC entry is an HGNC symbol, whereas the returned db_refs dict's
+        HGNC entry is an HGNC ID. Therefore this function should not be used
+        for db_refs dicts that don't satisfy this property.
+        """
         up_id = db_refs.get('UP')
         hgnc_sym = db_refs.get('HGNC')
         if up_id and not hgnc_sym:
@@ -297,9 +303,6 @@ class GroundingMapper(object):
         """Return a list of mapped statements with updated agent names.
 
         Creates a new list of statements without modifying the original list.
-
-        The agents in a statement should be renamed if the grounding map has
-        updated their db_refs.
 
         Parameters
         ----------
@@ -755,9 +758,9 @@ def run_deft_disambiguation(stmt, agent_list, idx, new_agent, agent_txt):
                     (agent_txt, standard_name, db_ns, db_id))
         if db_ns == 'HGNC':
             hgnc_sym = hgnc_client.get_hgnc_name(db_id)
-            GroundingMapper.standardize_agent_db_refs(new_agent,
-                                                      {'HGNC': hgnc_sym},
-                                                      do_rename=False)
+            standard_db_refs = \
+                GroundingMapper.standardize_db_refs({'HGNC': hgnc_sym})
+            new_agent.db_refs = standard_db_refs
         annots['agents']['deft'][idx] = disamb_scores
 
 
